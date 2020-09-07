@@ -1,0 +1,31 @@
+# Tidy Tuesday week 37
+
+This is my very first submission to Tidy Tuesday! Pretty excited I got to explore a sitcom I basically grew up with!
+
+## Get data
+
+```{r}
+library(tidytuesdayR)
+tuesdata <- tidytuesdayR::tt_load(2020, week = 37)
+```
+## Explore
+```{r}
+library(dplyr)
+tuesdata$friends %>% glimpse()
+tuesdata$friends %>% summary()
+tuesdata$friends_info %>% glimpse()
+tuesdata$friends_emotions %>% glimpse()
+```
+
+```{r}
+tuesdata$friends %>% 
+  group_by(speaker, season, episode) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count)) %>% 
+  top_n(6)
+```
+
+```{r}
+tuesdata$friends %>% filter(season == 9, episode == 1, scene == 1) %>% select(text, speaker, utterance) %>% top_n(15, utterance)
+```
+
