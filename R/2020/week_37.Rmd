@@ -18,14 +18,21 @@ tuesdata$friends_emotions %>% glimpse()
 ```
 
 ```{r}
-tuesdata$friends %>% 
+speakers = tuesdata$friends %>% 
+  filter(speaker != 'Scene Directions') %>% 
   group_by(speaker, season, episode) %>% 
-  summarize(count = n()) %>% 
-  arrange(desc(count)) %>% 
-  top_n(6)
+  summarize(no_of_lines = n()) 
 ```
 
 ```{r}
-tuesdata$friends %>% filter(season == 9, episode == 1, scene == 1) %>% select(text, speaker, utterance) %>% top_n(15, utterance)
+speakers %>% group_by(speaker) %>% 
+  summarise(no_of_lines = sum(no_of_lines)) %>% 
+  top_n(6, no_of_lines)
+```
+
+```{r}
+## Extra data from https://www.ceros.com/originals/friends-scripts-25th-anniversary-catchphrase-scenes-quotes/
+
+## I thought I would do some network viz with ggraph using some of the analysis ceros already made
 ```
 
