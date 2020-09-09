@@ -107,6 +107,10 @@ friends_graph = tbl_graph(
 # Define colors
 colors = c('#FF4238', '#42A2D6', '#FFDC00', '#FF4238', '#FFDC00', '#42A2D6')
 
+# Load fonts
+extrafont::loadfonts('win')
+
+# Plot
 g = ggraph(friends_graph, layout = 'linear') +
   geom_edge_arc(
     aes(color = no_of_lines, width = no_of_lines, alpha = stat(index)),
@@ -135,7 +139,10 @@ g = ggraph(friends_graph, layout = 'linear') +
     size = guide_legend(order = 1, 
                         override.aes = list(color = 'white', size = c(2,8,15)))
     ) +
-  labs(caption = "Data: {friends} R package and ceros.com. Created by: @loreabad6") +
+  labs(
+    # title = "The one with all the lines",
+    caption = "Data: {friends} R package and ceros.com. Created by: @loreabad6"
+  ) +
   theme(
     text = element_text(family = 'Friends', color = 'white', size = 9),
     plot.caption = element_text(family = 'Lydian', size = 8, angle = 0, hjust = 0, vjust = 0.5),
