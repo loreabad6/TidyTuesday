@@ -1,3 +1,16 @@
+---
+title: "Tidy Tuesday 2020"
+subtitle: "Week 37"
+output: github_document
+author: "Lorena Abad"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, echo = F}
+knitr::opts_chunk$set(dev="CairoPNG", warning = F, message = F)
+```
+
 # Tidy Tuesday week 37
 
 This is my very first submission to Tidy Tuesday! Pretty excited I got to explore a sitcom I basically grew up with!
@@ -8,7 +21,9 @@ This is my very first submission to Tidy Tuesday! Pretty excited I got to explor
 library(tidytuesdayR)
 tuesdata <- tidytuesdayR::tt_load(2020, week = 37)
 ```
+
 ## Explore
+
 ```{r}
 library(dplyr)
 tuesdata$friends %>% glimpse()
@@ -17,22 +32,129 @@ tuesdata$friends_info %>% glimpse()
 tuesdata$friends_emotions %>% glimpse()
 ```
 
-```{r}
-speakers = tuesdata$friends %>% 
-  filter(speaker != 'Scene Directions') %>% 
-  group_by(speaker, season, episode) %>% 
-  summarize(no_of_lines = n()) 
-```
+After exploring I decided to keep it simple, and will look at the number of lines by main character. 
+
+## Extract main speakers 
+
+Naturally, they should be the main 6 characters, other than "Scene Directions" which I filtered out.
 
 ```{r}
-speakers %>% group_by(speaker) %>% 
-  summarise(no_of_lines = sum(no_of_lines)) %>% 
+characters = tuesdata$friends %>% 
+  filter(speaker != 'Scene Directions') %>% 
+  group_by(speaker) %>% 
+  summarize(no_of_lines = n()) %>% 
   top_n(6, no_of_lines)
 ```
 
-```{r}
-## Extra data from https://www.ceros.com/originals/friends-scripts-25th-anniversary-catchphrase-scenes-quotes/
+## Get some extra data
+I was very amused by the [ceros.com](https://www.ceros.com/originals/friends-scripts-25th-anniversary-catchphrase-scenes-quotes/) analysis on the Tidy Tuesday repo and thought would pick a particular analysis they already did: "Number of lines between characters". 
 
-## I thought I would do some network viz with ggraph using some of the analysis ceros already made
+```{r}
+library(tibble)
+lines_between_characters = tribble(
+  ~to, ~from, ~no_of_lines,
+  'Rachel Green', 'Ross Geller', 3796,
+  'Monica Geller', 'Chandler Bing', 3201,
+  'Chandler Bing', 'Joey Tribbiani', 2563,
+  'Rachel Green', 'Phoebe Buffay', 1776,
+  'Rachel Green', 'Monica Geller', 1756,
+  'Monica Geller', 'Phoebe Buffay', 1684,
+  'Rachel Green', 'Joey Tribbiani', 1662,
+  'Joey Tribbiani', 'Ross Geller', 1589,
+  'Chandler Bing', 'Ross Geller', 1295,
+  'Joey Tribbiani', 'Phoebe Buffay', 1204,
+  'Phoebe Buffay', 'Ross Geller', 1068,
+  'Monica Geller', 'Ross Geller', 921,
+  'Monica Geller', 'Joey Tribbiani', 920,
+  'Chandler Bing', 'Phoebe Buffay', 795,
+  'Chandler Bing', 'Rachel Green', 670
+)
+```
+
+With the characters and the lines between them, I decided to do a network representation of the data with `tidygraph` and `ggraph`.
+
+## Setting up the graph
+
+### Preparing the "nodes"
+First, some data wrangling. Split first and last name, place the characters in an order I picked (really trial and error from the final plot), and add some extra info for the plotting. 
+
+```{r, fig.showtext = TRUE}
+characters = characters %>% 
+  tidyr::separate(speaker, c('first_name', 'last_name'), remove = F) %>% 
+  mutate(order = c(2,4,5,3,1,6)) %>% 
+  arrange(order) %>% 
+  mutate(speaker = factor(speaker, ordered = T)) %>%   
+  mutate(letter = unlist(strsplit('FRIEND',"")))
+```
+
+### Building the graph
+
+```{r}
+library(ggraph)
+library(tidygraph)
+
+friends_graph = tbl_graph(
+  nodes = characters, edges = lines_between_characters, 
+  directed = T, node_key = 'speaker')
+```
+
+## And plotting!
+```{r, fig.height = 5, fig.width = 15}
+# Fonts sources:
+## Main sitcom font: https://www.ffonts.net/Friends.font.download#
+## Credits font: https://fontsgeek.com/fonts/Lydian-Regular
+
+# Define colors
+colors = c('#FF4238', '#42A2D6', '#FFDC00', '#FF4238', '#FFDC00', '#42A2D6')
+
+g = ggraph(friends_graph, layout = 'linear') +
+  geom_edge_arc(
+    aes(color = no_of_lines, width = no_of_lines, alpha = stat(index)),
+    strength = 0.3,
+  ) +
+  scale_edge_alpha(guide = 'none') +
+  scale_edge_color_gradient("Lines between characters", low = 'white', high = '#f6c719', guide = 'legend') +
+  scale_edge_width("Lines between characters", range = c(0.3, 1.5)) +
+  geom_node_point(aes(color = speaker, size = no_of_lines), shape = 19, stroke = 2, show.legend = T) +
+  geom_node_text(
+    aes(label = letter), nudge_x = -0.5, size = 7, 
+    color = 'white', family = 'Friends', show.legend = F
+  ) +
+  geom_node_text(
+    aes(label = first_name), size = 4, fontface = 'bold',
+    color = '#1c0e01', family = 'Lydian', show.legend = F
+  ) +
+  annotate('text', x = 6.5, y = 0, label = 'S', color = 'white', size = 7, family = 'Friends') +
+  scale_size("Lines by character", range = c(18, 35)) +
+  scale_color_manual(breaks = characters$speaker, values = colors, guide = 'none') +
+  scale_y_discrete(expand = expansion(0.1, 0)) +
+  scale_x_discrete(expand = expansion(0.1, 0)) +
+  guides(
+    edge_color = guide_legend(override.aes = list(shape = NA)),
+    width = guide_legend(override.aes = list(shape = NA)),
+    size = guide_legend(order = 1, 
+                        override.aes = list(color = 'white', size = c(2,8,15)))
+    ) +
+  labs(caption = "Data: {friends} R package and ceros.com. Created by: @loreabad6") +
+  theme(
+    text = element_text(family = 'Friends', color = 'white', size = 8),
+    plot.caption = element_text(family = 'Lydian', size = 8, angle = 0, hjust = 0, vjust = 0.5),
+    plot.caption.position = 'plot',
+    legend.position = 'bottom',
+    legend.background = element_rect(fill = 'transparent'),
+    legend.text = element_text(size = 5),
+    legend.key = element_rect(fill = 'transparent'),
+    legend.box = 'vertical', legend.direction = 'horizontal',
+    legend.spacing = grid::unit(2, 'mm'),
+    panel.background = element_rect(fill = '#1c0e01'),
+    plot.background = element_rect(fill = '#1c0e01')
+  )
+g
+```
+
+
+## Save plot
+```{r}
+ggsave(g, filename = "plot/2020_week_37.png", device = "png", width = 30, height = 10, units = "cm")
 ```
 
