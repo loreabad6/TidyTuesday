@@ -137,12 +137,12 @@ g = ggraph(friends_graph, layout = 'linear') +
     ) +
   labs(caption = "Data: {friends} R package and ceros.com. Created by: @loreabad6") +
   theme(
-    text = element_text(family = 'Friends', color = 'white', size = 8),
+    text = element_text(family = 'Friends', color = 'white', size = 9),
     plot.caption = element_text(family = 'Lydian', size = 8, angle = 0, hjust = 0, vjust = 0.5),
     plot.caption.position = 'plot',
     legend.position = 'bottom',
     legend.background = element_rect(fill = 'transparent'),
-    legend.text = element_text(size = 5),
+    legend.text = element_text(size = 6),
     legend.key = element_rect(fill = 'transparent'),
     legend.box = 'vertical', legend.direction = 'horizontal',
     legend.spacing = grid::unit(2, 'mm'),
