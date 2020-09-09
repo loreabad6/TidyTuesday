@@ -1,0 +1,15 @@
+---
+title: "Tidy Tuesday contributions"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 2020
+
+### Week 37
+
+<img src="plot/2020_week_37.png" width="1000px"/> 
+
