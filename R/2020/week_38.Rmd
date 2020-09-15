@@ -50,7 +50,7 @@ states
 parkrec_states = states %>% right_join(parkrec, by = c('NAME'='state'))
 ```
 
-```{r}
+```{r, fig.height=6, fig.width=8}
 library(ggplot2)
 library(geofacet)
 ggplot(parkrec_states, aes(x = year, y = inf_adj_perchild, color = inf_adj_perchild),) +
