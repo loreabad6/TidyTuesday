@@ -1,0 +1,78 @@
+---
+title: "Tidy Tuesday 2020"
+subtitle: "Week 38"
+output: github_document
+author: "Lorena Abad"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(dev="CairoPNG", warning = F, message = F)
+```
+
+# Tidy Tuesday week 38
+
+## Get data
+
+```{r}
+library(tidytuesdayR)
+tuesdata <- tidytuesdayR::tt_load(2020, week = 38)
+```
+
+## Explore
+
+```{r}
+library(dplyr)
+tuesdata$kids %>% glimpse()
+```
+
+After reading the `tidykids` site, I decided to go for parks and recreations investment per child adjusted for inflation. 
+
+```{r}
+parkrec = tuesdata$kids %>% 
+  filter(variable == 'parkrec') %>% 
+  select(-raw, -inf_adj)
+
+parkrec
+```
+
+What years are we looking at?
+
+```{r}
+parkrec$year %>% table()
+```
+```{r}
+library(tigris)
+states = states()
+states
+
+parkrec_states = states %>% right_join(parkrec, by = c('NAME'='state'))
+```
+
+```{r}
+library(ggplot2)
+library(geofacet)
+ggplot(parkrec_states, aes(x = year, y = inf_adj_perchild, color = inf_adj_perchild),) +
+  geom_line(size = 2.5, alpha = 0.1) +
+  geom_line(size = 0.5) +
+  facet_geo(~STUSPS) +
+  scale_color_viridis_c('', limits = c(0,1.5), breaks = c(0,0.5,1,1.5), 
+                        labels = paste(c(0.0,0.5,1.0,1.5), '$')) +
+  xlab('') + ylab('') +
+  theme(
+    text = element_text(family = 'serif'),
+    strip.background = element_blank(),
+    # strip.text = element_blank(),
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    legend.position = c(0.95,0.2),
+    panel.background = element_rect(fill = 'transparent'),
+    plot.background = element_rect(fill = 'grey60'),
+    panel.grid = element_blank(),
+    legend.background = element_rect(fill = 'transparent'),
+    legend.key.width = unit(2, units = "mm")
+  )
+```
+
