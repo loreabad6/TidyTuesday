@@ -37,11 +37,6 @@ parkrec = tuesdata$kids %>%
 parkrec
 ```
 
-What years are we looking at?
-
-```{r}
-parkrec$year %>% table()
-```
 ```{r}
 library(tigris)
 states = states()
@@ -60,6 +55,7 @@ ggplot(parkrec_states, aes(x = year, y = inf_adj_perchild, color = inf_adj_perch
   scale_color_viridis_c('', limits = c(0,1.5), breaks = c(0,0.5,1,1.5), 
                         labels = paste(c(0.0,0.5,1.0,1.5), '$')) +
   xlab('') + ylab('') +
+  labs(title = 'The pulse of Parks and Recreation') +
   theme(
     text = element_text(family = 'serif'),
     strip.background = element_blank(),
