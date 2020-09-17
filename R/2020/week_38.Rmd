@@ -8,7 +8,7 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(dev="CairoPNG", warning = F, message = F)
+knitr::opts_chunk$set(dev="CairoPNG", warning = F, message = F, cache = T, fig.showtext = T)
 ```
 
 # Tidy Tuesday week 38
@@ -45,30 +45,45 @@ states
 parkrec_states = states %>% right_join(parkrec, by = c('NAME'='state'))
 ```
 
-```{r, fig.height=6, fig.width=8}
+```{r, fig.height=6, fig.width=8, fig.showtext=T}
+extrafont::loadfonts(device = 'win')
 library(ggplot2)
 library(geofacet)
-ggplot(parkrec_states, aes(x = year, y = inf_adj_perchild, color = inf_adj_perchild),) +
+g = ggplot(parkrec_states, aes(x = year, y = inf_adj_perchild, color = inf_adj_perchild),) +
   geom_line(size = 2.5, alpha = 0.1) +
-  geom_line(size = 0.5) +
+  geom_line(size = 1) + 
   facet_geo(~STUSPS) +
-  scale_color_viridis_c('', limits = c(0,1.5), breaks = c(0,0.5,1,1.5), 
+  scale_color_viridis_c('', limits = c(0,1.5), breaks = c(0,0.5,1,1.5),
                         labels = paste(c(0.0,0.5,1.0,1.5), '$')) +
   xlab('') + ylab('') +
-  labs(title = 'The pulse of Parks and Recreation') +
+  labs(
+    title = 'The pulse of parks and recreation',
+    subtitle = 'Public spending on parks and recreation\nper child from 1997 to 2016\nadjusted for inflation',
+    caption = "Data: {tidykids} R package. Created by: @loreabad6"
+  ) +
+  guides(color = guide_colorbar(label.position = 'top')) +
   theme(
-    text = element_text(family = 'serif'),
+    text = element_text(family = 'Futura LT', color = 'white'),
     strip.background = element_blank(),
-    # strip.text = element_blank(),
+    title = element_text(family = 'Segoe Print'),
+    strip.text = element_text(color = 'white'),
     axis.title = element_blank(),
     axis.text = element_blank(),
     axis.ticks = element_blank(),
-    legend.position = c(0.95,0.2),
+    legend.position = c(0.8,1.17),
+    legend.direction = 'horizontal',
     panel.background = element_rect(fill = 'transparent'),
-    plot.background = element_rect(fill = 'grey60'),
+    plot.background = element_rect(fill = 'black', color = 'transparent'),
     panel.grid = element_blank(),
     legend.background = element_rect(fill = 'transparent'),
-    legend.key.width = unit(2, units = "mm")
+    legend.key.width = unit(8, units = "mm"),
+    legend.key.height = unit(2, units = "mm")
   )
+
+g
 ```
 
+## Save plot
+```{r, fig.showtext=T}
+ggsave(g, filename = "plot/2020_week_38.png", device = "png", width = 18, height = 15, units = "cm")
+```
