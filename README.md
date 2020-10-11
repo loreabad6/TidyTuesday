@@ -23,3 +23,10 @@ Code to reproduce:
 
 Code to reproduce:
 [week\_39.Rmd](https://github.com/loreabad6/TidyTuesday/blob/master/R/2020/week_39.Rmd)
+
+### Week 41
+
+<img src="plot/2020_week_41.png" width="1000px"/>
+
+Code to reproduce:
+[week\_41.Rmd](https://github.com/loreabad6/TidyTuesday/blob/master/R/2020/week_41.Rmd)

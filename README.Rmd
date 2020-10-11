@@ -26,3 +26,9 @@ Code to reproduce: [week_38.Rmd](https://github.com/loreabad6/TidyTuesday/blob/m
 <img src="plot/2020_week_39.png" width="1000px"/> 
 
 Code to reproduce: [week_39.Rmd](https://github.com/loreabad6/TidyTuesday/blob/master/R/2020/week_39.Rmd)
+
+### Week 41
+
+<img src="plot/2020_week_41.png" width="1000px"/> 
+
+Code to reproduce: [week_41.Rmd](https://github.com/loreabad6/TidyTuesday/blob/master/R/2020/week_41.Rmd)
