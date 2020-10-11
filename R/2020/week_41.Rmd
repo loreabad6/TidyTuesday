@@ -48,7 +48,7 @@ p = ggplot(champions, aes(x = year, y = reorder(school, champ_wins))) +
     alias = 'basketball',
     x = champions$year,
     y = reorder(champions$school,champions$champ_wins),
-    size = 14, color = '#D44500', vjust = 0.1
+    size = 16, color = '#D44500', vjust = 0.1
   ) +
   labs(
     x = '', y = '',
@@ -66,5 +66,5 @@ p = ggplot(champions, aes(x = year, y = reorder(school, champ_wins))) +
 
 ## Save plot
 ```{r, fig.showtext=T}
-ggsave(p, filename = "plot/2020_week_41.png", device = "png", width = 22, height = 12, units = "cm", dpi = 300)
+ggsave(p, filename = "plot/2020_week_41.png", device = "png", width = 25, height = 12, units = "cm", dpi = 300)
 ```
