@@ -32,13 +32,10 @@ datasaurus = tuesdata$datasaurus
 ```{r}
 library(ggplot2)
 library(ggpubr)
-p = ggplot(tuesdata$datasaurus, aes(x, y, color = dataset)) +
+library(ggExtra)
+ggplot(tuesdata$datasaurus, aes(x, y, color = dataset)) +
   geom_point(show.legend = F) +
   gganimate::transition_states(dataset)
-  # geom_abline() +
-  # facet_wrap(~dataset)
-ggMarginal(p, groupColour = T, groupFill = T)
-
 
 
 ggscatterhist(
@@ -46,45 +43,4 @@ ggscatterhist(
   'x', 'y', color = 'dataset', margin.params = list(fill = 'dataset'), legend = 'none' 
 ) 
 
-library(ggforce)
-ggplot(tuesdata$datasaurus, aes(x, y, color = dataset)) +
-  geom_point(show.legend = F) +
-  facet_matrix(vars(dataset))
-```
-
-```{r}
-windows()
-# Load fonts
-emojifont::load.emojifont(font = "OpenSansEmoji.ttf")
-```
-
-
-```{r, fig.showtext=T}
-library(ggplot2)
-library(emojifont)
-p = ggplot(champions, aes(x = year, y = reorder(school, champ_wins))) +
-  # geom_point() +
-  emojifont::geom_emoji(
-    alias = 'basketball',
-    x = champions$year,
-    y = reorder(champions$school,champions$champ_wins),
-    size = 16, color = '#D44500', vjust = 0.1
-  ) +
-  labs(
-    x = '', y = '',
-    title = "NCAA Women's Basketball Champions", 
-    subtitle = "1982-2018",
-    caption = "Data: FiveThirtyEight. Visualization: @loreabad6"
-  ) +
-  scale_x_continuous(breaks = seq(1982, 2018, 2)) +
-  theme_bw() +
-  theme(
-    text = element_text(family = "mono", size = 30),
-    panel.grid = element_line(size = 0.35)
-  )
-```
-
-## Save plot
-```{r, fig.showtext=T}
-ggsave(p, filename = "plot/2020_week_41.png", device = "png", width = 25, height = 12, units = "cm", dpi = 300)
 ```

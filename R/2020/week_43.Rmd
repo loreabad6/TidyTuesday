@@ -1,0 +1,46 @@
+---
+title: "Tidy Tuesday 2020"
+subtitle: "Week 43"
+output: github_document
+author: "Lorena Abad"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(dev="CairoPNG", warning = F, message = F, cache = F, fig.showtext = T)
+```
+
+# Tidy Tuesday week 43
+
+## Get data
+
+```{r}
+library(tidytuesdayR)
+tuesdata <- tidytuesdayR::tt_load(2020, week = 43)
+```
+
+## Explore
+
+```{r}
+library(dplyr)
+tuesdata$beer_awards %>% glimpse()
+beer = tuesdata$beer_awards
+
+library(tigris)
+states = states()
+states
+
+beer_states = states %>% right_join(beer, by = c('STUSPS'='state'))
+
+beer_states %>% group_by(NAME, medal, year) %>% 
+  summarise(n()) %>% 
+  arrange(desc(`n()`))
+```
+
+
+```{r}
+library(ggplot2)
+
+
+```
