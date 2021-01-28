@@ -14,7 +14,7 @@ packages! I will link it here when it is ready!
 <img src="plot/2021_week_05.png" width="1000px"/>
 
 Simplified code to reproduce the plot:
-[week\_05.Rmd](https://github.com/loreabad6/TidyTuesday/blob/master/R/2021/week_05/week_05.Rmd)
+[week\_05.Rmd](https://github.com/loreabad6/TidyTuesday/blob/master/R/2021/week_05.Rmd)
 
 ## 2020
 
