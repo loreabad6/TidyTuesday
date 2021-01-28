@@ -268,7 +268,7 @@ g = ggraph(net, layout = layout_sf) +
   scale_fill_manual(values = RColorBrewer::brewer.pal(5, "Dark2")) +
   labs(
     title = "From **multinationals** to **wasteland countries**",
-    subtitle = "Insights from the <span style='color:#3a8c9e'>#break<span style='color:#85cbda'>free</span>fromplastic</span> movement", 
+    subtitle = "Insights from the <span style='color:#3a8c9e'>#break<span style='color:#85cbda'>free</span>fromplastic</span> initiative", 
     caption = "Data: *Break Free from Plastic* courtesy of Sarah Sauve.
     Visualization: @loreabad6"
   ) +

@@ -7,9 +7,9 @@ Tidy Tuesday contributions
 
 To create this plot I used the
 [`sfnetworks`](https://luukvdmeer.github.io/sfnetworks/) package in
-combination with [`ggraph`](https://ggraph.data-imaginist.com/). This
-[blog]() I wrote illustrates the first steps of integrating both
-packages!
+combination with [`ggraph`](https://ggraph.data-imaginist.com/). I am
+writing an entry that illustrates the first steps of integrating both
+packages! I will link it here when it is ready!
 
 <img src="plot/2021_week_05.png" width="1000px"/>
 
