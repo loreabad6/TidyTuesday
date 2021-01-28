@@ -26,21 +26,44 @@ tuesdata <- tidytuesdayR::tt_load(2020, week = 43)
 library(dplyr)
 tuesdata$beer_awards %>% glimpse()
 beer = tuesdata$beer_awards
-
-library(tigris)
-states = states()
-states
-
-beer_states = states %>% right_join(beer, by = c('STUSPS'='state'))
-
-beer_states %>% group_by(NAME, medal, year) %>% 
-  summarise(n()) %>% 
-  arrange(desc(`n()`))
 ```
 
+## After playing with the data, I wanted to find the answer to a very important question:
+## Where do I get the best Belgium style beer in the U.S.?
+
+```{r}
+# Get states polygons
+library(tidygeocoder)
+
+# Extract only Belgium beer style
+beer_belg = beer %>% 
+  filter(grepl("Belg", category)) 
+
+# Get Lat/Long coordinates for the wining cities
+beer_geocode = beer_belg %>% 
+  geocode(city = city, state = state, 
+          method = 'osm', 
+          lat = latitude , long = longitude)
+
+# Convert into sf object 
+library(sf)
+beer_sf = beer_geocode %>% 
+  st_as_sf(coords = c('longitude', 'latitude'))
+```
 
 ```{r}
 library(ggplot2)
 
+beer_belg %>% 
+  group_by(state, medal) %>% 
+  summarize(count = n()) %>% 
+  filter(medal == 'Gold') %>% 
+  arrange(desc(count))
 
+beer_belg %>% 
+  group_by(state) %>% 
+  mutate(prizes_per_state = n()) %>% 
+  ggplot(aes(x = year, y = reorder(state, prizes_per_state), color = medal)) +
+  geom_point()
+  
 ```

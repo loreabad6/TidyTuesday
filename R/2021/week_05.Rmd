@@ -1,0 +1,305 @@
+---
+title: "Tidy Tuesday 2021"
+subtitle: "Week 5"
+output: github_document
+author: "Lorena Abad"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  dev="CairoPNG", 
+  warning = F, message = F, cache = F, 
+  fig.showtext = T
+)
+```
+
+# Tidy Tuesday week 43
+
+## Call libraries
+
+```{r}
+library(tidytuesdayR)
+library(dplyr)
+library(tidygeocoder)
+library(sf)
+library(rnaturalearth)
+library(tidygraph)
+library(sfnetworks)
+library(ggplot2)
+library(ggraph)
+library(stringi)
+library(ggtext)
+```
+
+## Get data
+
+```{r, cache = T}
+tuesdata = tidytuesdayR::tt_load(2021, week = 5)
+```
+
+## Explore
+
+```{r}
+tuesdata$plastics %>% glimpse()
+```
+
+## Idea
+
+We can build a graph structure, with the location of the top 5 "Parent Companies" polluters according to how many countries their trash ends up in. 
+
+### Preparing the graph structure
+
+First, we tidy the data about parent companies, removing `Unbranded`, `null`s and the `Grand Total`s per year. Also countries, we remove the `EMPTY` fields and harmonize country names with capitalized letters.
+
+```{r}
+plastics = tuesdata$plastics %>% 
+  filter(
+    !(parent_company %in% c("Grand Total", "null", "Null", "Unbranded"))
+  ) %>% 
+  mutate(
+    parent_company = parent_company %>% 
+      tolower() %>% 
+      stri_trans_general("Latin-ASCII") %>% 
+      stri_trans_totitle(),
+    country = stri_trans_totitle(country)
+  ) 
+```
+
+Then, we can get the top five polluters for the three years of analysis (2019-2020)
+
+```{r}
+top_Co = plastics %>% 
+  group_by(parent_company) %>% 
+  summarise(
+    country_count = n_distinct(country), 
+    grand_total_sum = sum(grand_total, na.rm = T)
+  ) %>% 
+  arrange(desc(country_count, grand_total_sum)) %>% 
+  head(5)
+
+top_Co
+```
+
+Then, we can manually obtain headquarters locations from https://www.crunchbase.com/lists/companies-search-with-headquarters
+
+```{r}
+hq = c(
+  "Atlanta, Georgia, United States", #Coca-Cola
+  "New York, New York, United States", #PepsiCo
+  "Vevey, Vaud, Switzerland", #Nestle
+  "Mclean, Virginia, United States", #Mars
+  "London, England, United Kingdom" #Unilever
+)
+```
+
+And we merge the data, and add a geocoded lat, long using `tidygeocoder` to finally transform into an sf.
+
+```{r, eval = F}
+coords = geo(hq, method = "osm")
+```
+
+```{r, include = F}
+# To avoid calling the geocoder on each knit
+coords = structure(list(address = c("Atlanta, Georgia, United States", 
+"New York, New York, United States", "Vevey, Vaud, Switzerland", 
+"Mclean, Virginia, United States", "London, England, United Kingdom"), lat = c(33.7489924, 40.7127281, 46.4602978, 38.9342888, 51.5073219), long = c(-84.3902644, -74.0060152, 6.8418655, -77.1776327, -0.1276474)), row.names = c(NA, -5L), class = c("tbl_df", 
+"tbl", "data.frame"))
+```
+
+```{r}
+top_parent_companies = top_Co %>% 
+  mutate(hq = hq, lat = coords$lat, long = coords$long) %>% 
+  st_as_sf(crs = 4326, coords = c("long", "lat")) %>% 
+  mutate(parent_company = case_when(
+    parent_company == "The Coca-Cola Company" ~ "Coca-Cola",
+    parent_company == "Mars, Incorporated" ~ "Mars, Inc.",
+    TRUE ~ parent_company
+  )) %>% 
+  select(name = parent_company) %>% 
+  mutate(type = "Parent Company")
+```
+
+Now we can find centroids for those countries that have received plastics from the top polluting companies
+
+```{r}
+countries = plastics %>% 
+  filter(parent_company %in% top_Co$parent_company) %>% 
+  group_by(country) %>% 
+  summarise(count = n())
+```
+
+```{r, eval = F}
+coords_countries = geo(countries$country, method = "osm")
+# Get Taiwan coordinates, which was not recognized
+coords_taiwan = geo("Taiwan", method = "osm")
+coords_country = coords_countries %>% 
+  mutate(
+    lat = ifelse(address == "Taiwan_ Republic Of China (Roc)", coords_taiwan$lat, lat),
+    long = ifelse(address == "Taiwan_ Republic Of China (Roc)", coords_taiwan$long, long)
+) 
+```
+
+```{r, include = F}
+coords_country = structure(list(address = c("Argentina", "Australia", "Bangladesh", "Benin", "Brazil", "Bulgaria", "Burkina Faso", "Cameroon", "Canada", "Chile", "China", "Colombia", "Cyprus", "Denmark", "Ecuador", "El Salvador", "Empty", "France", "Germany", "Ghana", "Greece", "Honduras", "Hong Kong", "India", "Indonesia", "Ireland", "Italy", "Japan", "Kenya", "Korea", "Kuwait", "Latvia", "Lithuania", "Malaysia", "Maldives", "Mexico", "Montenegro", "Netherlands", "Nigeria", "Peru", "Philippines", "Portugal", "Romania", "Rwanda", "Serbia", "Singapore", "Slovenia", "South Africa", "Spain", "Sri Lanka", "Switzerland", "Taiwan_ Republic Of China (Roc)", "Tanzania", "Thailand", "Togo", "Tunisia", "Turkey", "Ukraine", "United Kingdom Of Great Britain & Northern Ireland", "United States Of America", "Vietnam"), lat = c(-34.9964963, -24.7761086, 24.4768783, 9.5293472, -10.3333333, 42.6073975, 12.0753083, 4.6125522, 61.0666922, -31.7613365, 35.000074, 2.8894434, 34.9823018, 55.670249, -1.3397668, 13.8000382, 39.74962805, 46.603354, 
+51.0834196, 8.0300284, 38.9953683, 15.2572432, 22.2793278, 22.3511148, -2.4833826, 52.865196, 42.6384261, 36.5748441, 1.4419683, 36.638392, 29.2733964, 56.8406494, 55.3500003, 4.5693754, 4.7064352, 22.5000485, 42.9868853, 52.24764975, 9.6000359, -6.8699697, 12.7503486, 40.0332629, 45.9852129, -1.9646631, 44.1534121, 1.357107, 46.14903455, -28.8166236, 39.3260685, 7.5554942, 46.7985624, 23.9739374, -6.5247123, 14.8971921, 8.7800265, 33.8439408, 38.9597594, 49.4871968, 54.7023545, 39.7837304, 13.2904027), long = c(-64.9672817, 134.755, 90.2932426, 2.2584408, -53.2, 25.4856617, -1.6880314, 13.1535811, -107.9917071, -71.3187697, 104.999927, -73.783892, 33.1451285, 10.3333283, -79.3666965, -88.9140683, -104.946658106006, 1.8883335, 10.4234469, -1.0800271, 21.9877132, -86.0755145, 114.1628131, 78.6677428, 117.8902853, -7.9794599, 12.674297, 139.2394179, 38.4313975, 127.6961188, 47.4979476, 24.7537645, 23.7499997, 102.2656823, 73.3287853, -100.0000375, 19.5180992, 5.54124684940616, 7.9999721, -75.0458515, 122.7312101, -7.8896263, 24.6859225, 30.0644358, 20.55144, 103.8194992, 14.6263257533406, 24.991639, -4.8379791, 80.7137847, 8.2319736, 120.9820179, 35.7878438, 100.83273, 1.0199765, 9.400138, 34.9249653, 31.2718321, -3.2765753, -100.4458825, 108.4265113)), row.names = c(NA, -61L), class = c("tbl_df", "tbl", "data.frame"))
+
+```
+
+Now we prepare an sf object with geocoded country data.
+
+```{r}
+affected_countries = countries %>% 
+  left_join(coords_country, by = c("country" = "address")) %>% 
+  st_as_sf(crs = 4326, coords = c("long", "lat")) %>% 
+  select(name = country) %>% 
+  mutate(type = "Affected Country")
+```
+
+Almost there! Now we can create our node list with the countries and parent companies coordinates.
+
+```{r}
+nodes = rbind(top_parent_companies, affected_countries)
+```
+
+And we create our edges:
+
+```{r}
+edges = plastics %>% 
+  filter(
+    parent_company %in% top_Co$parent_company,
+    country %in% countries$country
+  ) %>% 
+  mutate(parent_company = case_when(
+    parent_company == "The Coca-Cola Company" ~ "Coca-Cola",
+    parent_company == "Mars, Incorporated" ~ "Mars, Inc.",
+    TRUE ~ parent_company
+  )) %>% 
+  select(from = parent_company, to = country, everything()) 
+```
+
+To finally build our spatial network!
+
+```{r}
+net = sfnetwork(nodes, edges)
+```
+
+### Visualizing!
+
+First we get some background data, with a proper projection to plot the whole world. I have chosen Winkel Tripel.
+
+```{r}
+world = ne_countries(scale = "medium", returnclass = "sf") %>% 
+  st_transform(crs = "+proj=wintri +datum=WGS84 +no_defs +over")
+```
+
+We now project our network as well. 
+
+```{r}
+net = net %>% 
+  st_transform(crs = "+proj=wintri +datum=WGS84 +no_defs +over")
+net
+```
+
+Note that we have repeated edges going from the same parent company to the same country. Here we can slice the network to show this. From constructing the network, we know that the first 5 nodes are for the parent companies, and the rest for affected countries, so we can filter as follows:
+
+```{r}
+net %>% 
+  activate("edges") %>% 
+  filter(from == 1, to == 6)
+```
+
+This repetition is because we have data for two years. We can summarize the data to get a grand total using a spatial morpher that will simplify these redundant nodes.
+
+```{r}
+net = net %>% 
+  mutate(connections = centrality_degree(weights = grand_total)) %>% 
+  convert(
+    to_spatial_simple, .clean = T, 
+    summarise_attributes = list(function(x) sum(x, na.rm = T), year = "ignore")
+  )
+```
+
+We load fonts...
+
+```{r, eval = F}
+extrafont::loadfonts(device = 'win')
+```
+
+And we prepare a short description to be included in the plot. Colors correspond to the points used in the final map. This assignment was done manually
+
+```{r}
+description = paste("Plastics from the **top 5** polluting companies: <span style='color:#1B9E77'>Coca-Cola</span>, <span style='color:#E7298A'>Pepsico</span>, <span style='color:#7570B3'>Nestlé</span>, <span style='color:#D95F02'>Mars, Inc.</span> and <span style='color:#66A61E'>Unilever</span>, have been found in", nrow(affected_countries), "different countries between 2019 and 2020. <br>The lines connect the parent companies' headquarters to the countries where their plastics were found. Thicker lines represent higher plastic counts.")
+```
+
+#### Integrating sfnetworks with ggraph
+
+Since sfnetworks subclasses `tbl_graph` objects, we can easily pass them to a ggraph structure. But, to let ggraph know where to place the nodes, we can create a layout function that will extract the graph coordinates. 
+
+```{r}
+layout_sf = function(graph){
+  # Extract X and Y coordinates from the nodes
+  graph = activate(graph, "nodes")
+  x = sf::st_coordinates(graph)[,"X"]
+  y = sf::st_coordinates(graph)[,"Y"]
+  data.frame(x, y)
+}
+```
+
+And now the visualization:
+
+```{r, fig.showtext = T, fig.width = 16, fig.height = 10}
+g = ggraph(net, layout = layout_sf) +
+  geom_sf(data = world, fill = "grey30", color = NA) +
+  geom_edge_arc(
+    aes(alpha = grand_total, width = grand_total),
+    color = "white", strength = 0.7,
+    show.legend = F
+  ) +
+  geom_node_point(
+    aes(
+      fill = ifelse(type == "Parent Company", name,  NA_character_),
+      shape = type,
+    ),
+    size = 2.5, color = "white", stroke = 1, show.legend = F
+  ) +
+  scale_shape_manual(values = c(NA, 21)) +
+  scale_fill_manual(values = RColorBrewer::brewer.pal(5, "Dark2")) +
+  labs(
+    title = "From **multinationals** to **wasteland countries**",
+    subtitle = "Insights from the <span style='color:#3a8c9e'>#break<span style='color:#85cbda'>free</span>fromplastic</span> movement", 
+    caption = "Data: *Break Free from Plastic* courtesy of Sarah Sauve.
+    Visualization: @loreabad6"
+  ) +
+  geom_textbox(
+    aes(label = description, x = -16011994, y = -4018694), 
+    color = "white", size = 2.75, width = grid::unit(0.25, "npc"),
+    # remove label background and outline
+    fill = NA, box.color = NA, family = "Tahoma", 
+    # remove label padding, since we have removed the label outline
+    box.padding = grid::unit(rep(0.1, 4), "pt") 
+  ) +
+  scale_edge_width(range = c(0.25, 0.75)) +
+  scale_edge_alpha(range = c(0.15, 0.5)) +
+  coord_sf(datum = NULL) +
+  theme(
+    text = element_text(color = "white"),
+    plot.background = element_rect(fill = "grey10"),
+    panel.background = element_rect(fill = "grey10"),
+    plot.title = element_markdown(family = 'Tahoma', size = 14), 
+    plot.subtitle = element_markdown(family = 'Tahoma', size = 10), 
+    plot.caption = element_markdown(family = 'Tahoma', size = 8)
+  )
+```
+
+## Save plot and crop white space
+
+```{r, eval = F}
+ggsave(g, filename = here::here("plot", "2021_week_05.png"), 
+       device = "png", width = 20, height = 14, units = "cm")
+knitr::plot_crop(here::here("plot", "2021_week_05.png"))
+```
+
+
+
