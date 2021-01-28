@@ -11,7 +11,7 @@ combination with [`ggraph`](https://ggraph.data-imaginist.com/). This
 [blog]() I wrote illustrates the first steps of integrating both
 packages!
 
-<img src="plot/2020_week_41.png" width="1000px"/>
+<img src="plot/2021_week_05.png" width="1000px"/>
 
 Simplified code to reproduce the plot:
 [week\_05.Rmd](https://github.com/loreabad6/TidyTuesday/blob/master/R/2021/week_05/week_05.Rmd)
