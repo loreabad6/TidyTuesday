@@ -586,11 +586,7 @@ knitr::plot_crop(here::here("plot", "2021_week_05.png"))
 
 And voilá!
 
-``` r
-knitr::include_graphics(here::here("plot", "2021_week_05.png"))
-```
-
-<img src="E:/Personal_projects/TidyTuesday/plot/2021_week_05.png" width="2358" />
+![](https://raw.githubusercontent.com/loreabad6/TidyTuesday/master/plot/2021_week_05.png)<!-- -->
 
 Hopefully you did not quit half way through this step by step guide and
 will be now encouraged to test the `sfnetworks` and `ggraph`

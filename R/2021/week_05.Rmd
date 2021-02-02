@@ -404,8 +404,8 @@ knitr::plot_crop(here::here("plot", "2021_week_05.png"))
 
 And voilá! 
 
-```{r}
-knitr::include_graphics(here::here("plot", "2021_week_05.png"))
+```{r, echo = F}
+knitr::include_graphics("https://raw.githubusercontent.com/loreabad6/TidyTuesday/master/plot/2021_week_05.png")
 ```
 
 Hopefully you did not quit half way through this step by step guide and will be now encouraged to test the `sfnetworks` and `ggraph` integration! Leave me any suggestions or comments on the issues of this repo!
