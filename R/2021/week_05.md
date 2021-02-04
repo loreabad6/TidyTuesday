@@ -17,7 +17,6 @@ other `ggplot2` functions.
 Let’s start with loading the libraries we will use:
 
 ``` r
-library(tidytuesdayR)
 library(dplyr, quietly = T)
 library(tidygeocoder)
 library(sf, quietly = T)
@@ -454,36 +453,48 @@ First things first, let’s load some fonts (yes, I am a windows user! 😐).
 extrafont::loadfonts(device = 'win')
 ```
 
-Now we can prepare the title, subtitle, caption and a short description
-to be included in the plot. Colors in the description correspond to the
-points used in the final map. This assignment was done manually. The
-text is wrapped around `<span>` tags to pass them to `ggtext` functions
-later.
+We will now make a match for colors so that a descriptive text prepared
+below corresponds to the points used in the final map. The color
+assignment was done with the following named vector, which takes the
+name of the polluting companies as names for a palette with 5 colors. We
+will then use this vector in our description text and in the final plot.
 
 ``` r
-## Check the .Rmd file for a correct way to prepare this description.
+comp_name = net %>%
+  activate("nodes") %>%
+  filter(type == "Parent Company") %>%
+  pull(name)
+
+comp_col = RColorBrewer::brewer.pal(5, "Dark2")
+names(comp_col) = comp_name
+```
+
+Now we can prepare the title, subtitle, caption and a short description
+to be included in the plot. The text is wrapped around `<span>` tags to
+pass them to `ggtext` functions later.
+
+``` r
+## Check the .Rmd file for a correct way to prepare this labels.
 title = "From **multinationals** to **wasteland countries**"
 subtitle = "Insights from the 
             <span style='color:#3a8c9e'>
             #break<span style='color:#85cbda'>
             free</span>fromplastic
             </span> initiative" 
-caption = "Data: *Break Free from Plastic* courtesy of Sarah Sauve. 
+caption = "Data: *Break Free from Plastic* courtesy of Sarah Sauvé. 
           Visualization: @loreabad6"
 description = paste(
-  "Plastics from the **top 5** polluting companies: 
-  <span style='color:#1B9E77'>Coca-Cola</span>, 
-  <span style='color:#E7298A'>Pepsico</span>, 
-  <span style='color:#7570B3'>Nestlé</span>, 
-  <span style='color:#D95F02'>Mars, Inc.</span> 
-  and <span style='color:#66A61E'>Unilever</span>, 
-  have been found in", nrow(affected_countries), 
-  "different countries between 2019 and 2020. 
-  <br>The lines connect the parent companies' 
-  headquarters to the countries where their 
-  plastics were found. Thicker lines represent 
+  "Plastics from the **top 5** polluting companies: <span style='color:",
+  comp_col[1], "'>Coca-Cola</span>, <span style='color:", 
+  comp_col[2], "'>Pepsico</span>, <span style='color:", 
+  comp_col[3], "'>Nestlé</span>, <span style='color:", 
+  comp_col[4], "'>Mars, Inc.</span> and <span style='color:", 
+  comp_col[5], "'>Unilever</span>, have been found in",
+  nrow(affected_countries), "different countries between 2019 and 2020.
+  <br>The lines connect the parent companies' headquarters to the
+  countries where their plastics were found. Thicker lines represent
   higher plastic counts."
-  )
+)
 ```
 
 ### Integrating sfnetworks with ggraph
@@ -521,21 +532,15 @@ g = ggraph(net, layout = layout_sf) +
   ) +
   # Create node geoms using ggraph, in this case points
   geom_node_point(
-    # Remember the types we assigned during creation,
-    # They will help us filter which nodes we want to 
-    # represent with a point and which not.
-    aes(
-      fill = ifelse(type == "Parent Company", name,  NA_character_),
-      shape = type,
-    ),
-    # I will use pch 21 below, so the stroke determines 
-    # the bound to use
-    size = 2.5, color = "white", stroke = 1, show.legend = F
+    # Remember the types we assigned during creation, they will help us 
+    # filter which nodes we want to represent with a point and which not.
+    # ggraph has a very nice filter aesthetic that let's us do this simple
+    aes(fill = name, filter = type == "Parent Company"),
+    # I will use pch 21, so the stroke determines the bound to use
+    size = 2.5, color = "white", stroke = 1, show.legend = F, shape = 21
   ) +
-  # Assign pch 21 only to parent companies
-  scale_shape_manual(values = c(NA, 21)) +
   # Give colors to each Parent Company
-  scale_fill_manual(values = RColorBrewer::brewer.pal(5, "Dark2")) +
+  scale_fill_manual(values = comp_col) +
   # Get the labels created above. They have markdown syntax.
   labs(
     title = title,
