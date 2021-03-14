@@ -9,6 +9,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## 2021
 
+### Week 11
+
+<img src="plot/2021_week_11.png" width="1000px"/>
+
+Code to reproduce:
+[week_11.Rmd](https://github.com/loreabad6/TidyTuesday/blob/master/R/2021/week_11.Rmd)
+
 ### Week 05
 
 To create this plot I used the [`sfnetworks`](https://luukvdmeer.github.io/sfnetworks/) package in combination with [`ggraph`](https://ggraph.data-imaginist.com/). I am writing an entry that illustrates the first steps of integrating both packages! I will link it here when it is ready!
