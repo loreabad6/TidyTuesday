@@ -5,6 +5,13 @@ Tidy Tuesday contributions
 
 ### Week 11
 
+<img src="plot/2021_week_13.png" width="1000px"/>
+
+Code to reproduce:
+[week\_13.Rmd](https://github.com/loreabad6/TidyTuesday/blob/master/R/2021/week_13.Rmd)
+
+### Week 11
+
 <img src="plot/2021_week_11.png" width="1000px"/>
 
 Code to reproduce:
