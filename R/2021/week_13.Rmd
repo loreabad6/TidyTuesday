@@ -26,7 +26,6 @@ knitr::opts_chunk$set(
 ```{r}
 library(tidytuesdayR)
 library(tidyverse)
-library(ggfx)
 library(sf)
 library(patchwork)
 library(rnaturalearth)
@@ -253,10 +252,8 @@ w = ggplot() +
     data = filter(world, admin != "Antarctica"),
     fill = "grey50", size = 0.001, color = NA
   ) +
-  # with_inner_glow(
-    geom_sf(data = countries_geometry, 
-          aes(fill = vote), color = NA #),
-    # color = "white"
+  geom_sf(data = countries_geometry, 
+          aes(fill = vote), color = NA
   ) +
   coord_sf(crs = crs, clip = "off") +
   scale_fill_manual(
