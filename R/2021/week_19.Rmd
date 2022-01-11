@@ -1,0 +1,316 @@
+---
+title: "Tidy Tuesday 2021"
+subtitle: "Week 19"
+output: github_document
+author: "Lorena Abad"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+options(width=80)
+knitr::opts_chunk$set(
+  echo = TRUE,
+  dev="CairoPNG", 
+  warning = F, message = F, cache = F, 
+  fig.showtext = T,
+  tidy.opts=list(width.cutoff=80), 
+  tidy=TRUE
+)
+```
+
+# Tidy Tuesday week 19
+
+## Libraries
+
+```{r}
+library(tidytuesdayR)
+library(tidyverse)
+library(sf)
+# library(patchwork)
+# library(rnaturalearth)
+# library(ragg)
+```
+
+## Get data
+
+```{r}
+tuesdata <- tt_load(2021, week = 19)
+water = tuesdata$water
+```
+
+## Make it spatial
+
+```{r}
+watersf = st_as_sf(water, crs = 4326, coords = c("lon_deg", "lat_deg"))
+```
+
+```{r}
+watersf %>% 
+  filter(country_name == "Kenya") %>% mapview::mapview()
+  pull(water_source) %>%
+  table()
+```
+
+### Filtering topic of interest
+
+I found it interesting the outer space is discussed at the UN sessions, so I decided to explore the topics and how the votes were. I picked a single resolution after exploring.
+
+```{r}
+outer_space = roll %>% 
+  filter(str_detect(tolower(descr), "no first placement")) %>% 
+  left_join(unvotes) 
+
+outer_clean = outer_space %>% 
+  mutate(
+    vote = factor(
+      vote,
+      levels = c("yes","abstain", "no")
+    )
+  )  %>% 
+  mutate(
+    topic = "No first placement of weapons in outer space",
+    year_label = paste0("Year: ", format(date, "%Y")),
+    session_label = paste0("Session: ", session)
+  )
+```
+
+### Preparing spatial data
+
+```{r}
+no_countries = outer_clean %>% filter(vote == "no")
+```
+
+```{r}
+# Inspiration from:
+# https://stackoverflow.com/questions/43207947/whole-earth-polygon-for-world-map-in-ggplot2-and-sf
+# CRS is the one used for the official UN logo
+crs = "+proj=aeqd +lat_0=85 +lon_0=0 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"
+# Get countries from rnaturalearth
+world = ne_countries(scale = "medium", returnclass = "sf") %>% 
+  select(admin, iso_a2)
+# Draw a sphere to plot countries on top
+# It will represent the oceans
+sphere = st_graticule(ndiscr = 10000, margin = 10e-6) %>%
+  st_transform(crs = crs) %>%
+  st_convex_hull() %>%
+  summarise(geometry = st_union(geometry))
+
+countries_geometry = outer_clean %>% 
+  left_join(world, by = c("country_code" = "iso_a2")) %>% 
+  st_as_sf()
+```
+
+
+## Plot
+
+### Setting themes
+
+```{r}
+# Load fonts
+extrafont::loadfonts('win')
+theme_set(theme_minimal(base_family = "Futura LT"))
+theme_update(
+  axis.title = element_blank(),
+  axis.ticks = element_blank(),
+  axis.text = element_blank(),
+  panel.grid = element_blank()
+)
+```
+
+### Setting colors
+
+```{r}
+votepal = c(
+  "yes" = "deepskyblue3",
+  "abstain" = "khaki", 
+  "no" = "firebrick1"
+)
+```
+
+### Caption text
+
+```{r}
+caption_text = paste0(
+  "Data: ",
+  "Harvard's Dataverse. Voeten, 2013. ",
+  "Visualization: ", 
+  "@loreabad6"
+  )
+```
+
+### Base plot
+
+```{r, fig.height = 35, fig.width = 10}
+g = ggplot(
+    no_countries,
+    aes(y = vote, x = country_code, label = country_code)
+  ) +
+  # with_outer_glow(
+    geom_point(color = votepal['no'], shape = 20, size = 2.5 #),
+    # color = "white", sigma = 10 #, ignore_background = F
+  ) +
+  geom_text(
+    color = "white",
+    size = 2.5,
+    nudge_x = 0, nudge_y = 0.4,
+    family = "Futura LT"
+  ) +
+  scale_y_discrete(
+    drop = F,
+    expand = expansion(mult = c(0,0), add = c(0,0))
+  ) +
+  facet_wrap(
+    ~ session_label + year_label,
+    nrow = 1,
+    labeller = label_wrap_gen(width = 25, multi_line = TRUE)
+  ) +
+  coord_polar(clip = "off") +
+  theme(
+    text = element_text(color = "white"),
+    legend.position = "none",
+    panel.spacing = unit(0, "cm"),
+    plot.margin = margin(rep(5, 4)),
+    plot.background = element_rect(
+      color = "black",fill = "black"
+    ),
+    panel.background = element_rect(
+      color = "black", fill = "black"
+    ),
+    strip.text = element_text(color = "white"),
+    strip.text.y.left = element_text(hjust = 1, angle = 0),
+    strip.background = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5, size = 9),
+    plot.caption.position = "plot",
+    plot.caption = element_text(hjust = 0, size = 8)
+  ) +
+  labs(
+    title = "UN members and the Prevention of an Arms Race in Outer Space\nResolution: No first placement of weapons in outer space",
+    subtitle = str_wrap("The number of UN member countries voting against policy preventing the first placement of weapons in outer space has increased almost four times since the resolution was introduced in 2014. Countries voting against the policy are represented as points orbiting the earth.", 100),
+    caption = caption_text
+  )
+```
+
+### Legend plot
+
+```{r}
+legend = no_countries %>% 
+  select(country, country_code, vote) %>% 
+  distinct() %>% 
+  arrange(country_code) %>% 
+  mutate(
+    label = paste0(
+      # country_code, "\n",
+      str_replace_all(country, " ", "\n")
+    ), 
+    id = row_number()
+) 
+
+# From https://www.r-graph-gallery.com/296-add-labels-to-circular-barplot.html
+# ----- This section prepare a dataframe for labels ---- #
+# Get the name and the y position of each label
+
+# calculate the ANGLE of the labels
+number_of_points = nrow(legend)
+angle =  90 - 360 * (legend$id-0.5) / number_of_points
+# I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
+ 
+# calculate the alignment of labels: right or left
+# If I am on the left part of the plot, my labels have currently an angle < -90
+# flip angle BY to make them readable
+legend2 = legend %>% 
+  mutate(
+    hjust = ifelse(angle < -90, 1, 0),
+    angle = ifelse(angle < -90, angle + 180, angle)
+  )
+ # ----- ------------------------------------------- ---- #
+ 
+
+l = ggplot(legend2, aes(y = vote, x = country_code)) +
+  geom_point(color = "white", shape = 20, size = 1.5
+  ) +
+  geom_text(
+    aes(hjust = hjust, label = label),
+    color = "white",
+    size = 1.5,
+    nudge_x = 0, nudge_y = 0.6,
+    family = "Futura LT",
+    angle = legend2$angle
+  ) +
+  scale_y_discrete(
+    drop = F,
+    expand = expansion(mult = c(0,0), add = c(0,0))
+  ) + 
+  coord_polar(clip = "off") 
+```
+
+### World plot
+
+```{r}
+w = ggplot() +
+  geom_sf(
+    data = sphere,
+    fill = "gray10", color = NA, alpha = 0.8
+  ) +
+  geom_sf(
+    data = filter(world, admin != "Antarctica"),
+    fill = "grey50", size = 0.001, color = NA
+  ) +
+  geom_sf(data = countries_geometry, 
+          aes(fill = vote), color = NA
+  ) +
+  coord_sf(crs = crs, clip = "off") +
+  scale_fill_manual(
+    "Vote:",
+    values = votepal,
+    na.value = "grey50"
+  ) +
+  theme(
+    text = element_text(color = "white"),
+    plot.background = element_rect(fill = "transparent",
+                                   color = "transparent"), 
+    panel.background = element_rect(fill = "transparent",
+                                    color = "transparent"),
+    plot.margin = margin(rep(0.5, 4)),
+    panel.spacing = unit(1.5, "cm"),
+    legend.position = "top",
+    strip.background = element_rect(fill = "transparent",
+                                    color = NA),
+    strip.text = element_blank(),
+    legend.background = element_blank()
+  ) +
+  facet_wrap(~ session_label, nrow = 1) 
+```
+
+### Arrange patchwork
+
+```{r}
+layout = c(
+  area(1,1,20,60),
+  area(1,3,20,58)
+)
+
+g_inset = g + 
+  inset_element(
+    l,
+    left = 0.8, bottom = 1.3,
+    right = 1, top = 1.8
+  )
+
+p = g_inset + w + plot_layout(design = layout)
+```
+
+### Save plot
+
+```{r}
+agg_png(
+  filename = "plot/2021_week_13.png",
+  width = 24, height = 11,
+  units = "cm", res = 300
+)
+p
+invisible(dev.off())
+knitr::plot_crop("plot/2021_week_13.png")
+```

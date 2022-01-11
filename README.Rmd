@@ -7,6 +7,16 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## 2022
+
+### Week 2
+
+<img src="plot/2022_week_02.png" width="1000px"/>
+
+Code to reproduce:
+[week_02.Rmd](https://github.com/loreabad6/TidyTuesday/blob/master/R/2022/week_02.Rmd)
+
+
 ## 2021
 
 ### Week 13
