@@ -1,0 +1,226 @@
+---
+title: "Tidy Tuesday 2022"
+subtitle: "Week 03"
+output: github_document
+author: "Lorena Abad"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+options(width=80)
+knitr::opts_chunk$set(
+  echo = TRUE,
+  dev="CairoPNG", 
+  warning = F, message = F, cache = F, 
+  fig.showtext = T,
+  tidy.opts=list(width.cutoff=80), 
+  tidy=TRUE
+)
+```
+
+# Tidy Tuesday week 03
+
+## Get data
+
+```{r}
+library(tidytuesdayR)
+tuesdata = tt_load("2022-01-18")
+```
+
+## Explore
+
+```{r}
+library(tidyverse)
+chocolate = tuesdata$chocolate
+chocolate %>% glimpse()
+```
+
+## Wrangle
+
+```{r}
+library(glue)
+choco_ecu = chocolate %>% 
+  filter(country_of_bean_origin == "Ecuador") %>% 
+  group_by(company_location) %>% 
+  mutate(
+    company_n = n(),
+    rating_avg = round(mean(rating), 1)
+  ) %>% 
+  ungroup() %>% 
+  filter(company_n > 3) %>% 
+    mutate(
+    label = glue(
+      '{company_manufacturer}<br>
+      Cocoa: {cocoa_percent}<br>
+      *"{str_to_sentence(most_memorable_characteristics)}"*'
+    )
+  )
+
+choco_ecu_worst = choco_ecu %>% 
+  filter(rating < 2) 
+choco_ecu_best = choco_ecu %>% 
+  filter(rating == max(rating))
+```
+
+## Plot
+
+```{r, fig.showtext=T}
+library(ggridges)
+library(scico)
+library(ggtext)
+
+# Load fonts
+extrafont::loadfonts('win')
+
+p = ggplot(choco_ecu) +
+  aes(
+    y = fct_reorder(company_location, rating, .fun = mean),
+    x = rating, fill = stat(x),
+    label = company_location
+  ) +
+  geom_text(
+    aes(x = rating_avg - 1.4, color = rating_avg), nudge_y = 0.3, 
+    show.legend = FALSE,
+    family = "Britannic Bold", 
+    check_overlap = TRUE,
+    size = 12
+  ) +
+  # Australia curve
+  geom_curve(
+    aes(x = 2.01, xend = 0.9, y = 10.5, yend = 9.8),
+    ncp = 300, angle = 130,
+    size = 0.08, curvature = 0.4,
+    color = scico(1, direction = -1, end = 0.5, palette = "bilbao"),
+    arrow = arrow(length = unit(2, "mm"),
+                  type = "closed")
+  ) +
+  # Ecuador curve
+  geom_curve(
+    aes(x = 1.3, xend = 0.7, y = 3, yend = 2.5),
+    ncp = 300, angle = 130,
+    size = 0.08, curvature = -0.3,
+    color = scico(1, direction = -1, end = 0.5, palette = "bilbao"),
+    arrow = arrow(length = unit(2, "mm"),
+                  type = "closed")
+  ) +
+  # Worst rating curve
+  geom_curve(
+    aes(x = 0.9, xend = 0.8, y = 4, yend = 5),
+    ncp = 300, angle = 120,
+    size = 0.08, curvature = -0.3,
+    color = scico(1, direction = -1, end = 0.5, palette = "bilbao"),
+    arrow = arrow(length = unit(2, "mm"),
+                  type = "closed")
+  ) +
+  # Highest ratings curve
+  geom_curve(
+    aes(x = 4.01, xend = 4.65, y = 11.2, yend = 10.3),
+    ncp = 300, angle = 120,
+    size = 0.08, curvature = 0.3,
+    color = scico(1, direction = -1, end = 0.5, palette = "bilbao"),
+    arrow = arrow(length = unit(2, "mm"),
+                  type = "closed")
+  ) +
+  # USA curve
+  geom_curve(
+    aes(x = 4.08, xend = 4.95, y = 8, yend = 6.9),
+    ncp = 300, angle = 120,
+    size = 0.08, curvature = -0.6,
+    color = scico(1, direction = -1, end = 0.5, palette = "bilbao"),
+    arrow = arrow(length = unit(2, "mm"),
+                  type = "closed")
+  ) +
+  # Germany curve
+  geom_curve(
+    aes(x = 3.5, xend = 4.45, y = 1, yend = 1.2),
+    ncp = 300, angle = 120,
+    size = 0.08, curvature = 0.3,
+    color = scico(1, direction = -1, end = 0.5, palette = "bilbao"),
+    arrow = arrow(length = unit(2, "mm"),
+                  type = "closed")
+  ) +
+  # Annotations
+  annotate(
+    geom = "richtext", 
+    x = c(0.9, 0.5, 0.8, 5.05, 5.1, 4.9), 
+    y = c('Canada', 'Ecuador', 'Italy', 'Australia', 'Italy', 'Spain'),
+    label = c(
+      # Australia ann
+      "Australia produces the<br>**highest rated** chocolate *(3.8/5)*,<br> although only 4 ratings are considered.<br>*Creamy* was one of the most<br>memorable characteristics",
+      # Ecuador ann
+    "<br>Surprisingly, Ecuadorian<br>companies rank only **8th**<br>*(3/5, n = 56)*",
+    # Worst rating ann
+    "<br><br>*Callebaut*, a belgian<br>company produces the **worst**<br>**rated** chocolate (1/5)<br>with 70% cocoa and a *bitter* taste",
+    # Highest rating ann
+    "<br>Highest rating is **4/5** with<br>*cinnamon*, *nuts*, *creamy*<br> as memorable characteristics.<br>Cocoa percent: 70 - 73%",
+    # USA ann
+    "The **majority** of rated<br>chocolates *(n=86)* were<br>produced in the U.S.A.<br>with a mean rating of<br>**3.3/5**",
+    # Germany ann
+    "<br><br><br><br>Worst rated chocolate is<br>produced in Germany *(2.4/5, n = 4)*.<br>Some reasons might be their<br>*floral*, *harsh aroma* and<br>even *burnt* characteristics **!**"
+    ),
+    color = "#4f1f10", family = "Futura LT",
+    fill = NA, label.color = NA, # remove background and outline
+  ) +
+  stat_density_ridges(
+     jittered_points = TRUE, color = 'white',
+     aes(point_color = stat(x)),
+     position = position_raincloud(height = 0.2, width = 0.05),
+     alpha = 0.5, scale = 0.9, point_size = 1,
+     rel_min_height = 0.001,
+     show.legend = FALSE,
+     geom = "density_ridges_gradient",
+     quantile_lines = TRUE, 
+     quantiles = 2,
+     quantile_fun = mean
+  ) +
+  scale_fill_scico(
+    palette = 'bilbao', begin = 0.3,
+    aesthetics = c("point_color", "fill", "color")
+  ) +
+  scale_y_discrete(expand = expansion(add = c(0.5,1.2))) +
+  scale_x_continuous(position = 'top', expand = expansion(add = c(0.2,0.5))) +
+  labs(
+    x = NULL, y = NULL,
+    title = "Who makes the <span style='color:#4f1f10'>BEST</span> chocolate with Ecuadorian beans?", 
+    caption = "Ratings from 1 to 5. White vertical line indicates mean rating.\nData: Flavors of Cacao by way of Georgios and Kelsey | Visualization: @loreabad6"
+  ) +
+  theme_bw() +
+  theme(
+    text = element_text(
+      family = "Futura LT",
+      color = scico(1, direction = -1, end = 0.9, palette = "bilbao")
+    ),
+    axis.text.x = element_text(
+      family = "Futura LT", size = 13,
+      color = scico(1, direction = -1, end = 1, palette = "bilbao")
+    ),
+    plot.title.position = "plot",
+    plot.title = element_markdown(
+      family = "Britannic Bold",
+      size = 28, hjust = 0.5,
+      margin = margin(t = 5, b = 5, unit = 'mm')
+    ),
+    # plot.subtitle = element_text(
+    #   hjust = 0.5, size = 14, color = "#4f1f10"
+    # ),
+    plot.caption.position = "plot",
+    plot.caption = element_text(
+      hjust = 0.5, size = 11, color = "#4f1f10"
+    ),
+    axis.ticks = element_blank(),
+    axis.text.y = element_blank(),
+    panel.grid.major.x = element_line(color = 'white'),
+    panel.grid.major.y = element_blank(),
+    panel.border = element_rect(color = "white"),
+    panel.background = element_rect(fill = "#f2ebd8"),
+    plot.background = element_rect(fill = "#f2ebd8")
+  )
+```
+
+## Save plot
+```{r, fig.showtext=T}
+ggsave(p, filename = "plot/2022_week_03.png",
+       device = "png", width = 35, height = 20.5,
+       units = "cm", dpi = 300)
+```

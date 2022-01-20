@@ -9,6 +9,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## 2022
 
+### Week 3
+
+<img src="plot/2022_week_03.png" width="1000px"/>
+
+Code to reproduce:
+[week_03.Rmd](https://github.com/loreabad6/TidyTuesday/blob/master/R/2022/week_03.Rmd)
+
 ### Week 2
 
 <img src="plot/2022_week_02.png" width="1000px"/>
