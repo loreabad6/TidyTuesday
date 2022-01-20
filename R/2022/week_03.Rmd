@@ -48,14 +48,7 @@ choco_ecu = chocolate %>%
     rating_avg = round(mean(rating), 1)
   ) %>% 
   ungroup() %>% 
-  filter(company_n > 3) %>% 
-    mutate(
-    label = glue(
-      '{company_manufacturer}<br>
-      Cocoa: {cocoa_percent}<br>
-      *"{str_to_sentence(most_memorable_characteristics)}"*'
-    )
-  )
+  filter(company_n > 3)
 
 choco_ecu_worst = choco_ecu %>% 
   filter(rating < 2) 
@@ -146,9 +139,9 @@ p = ggplot(choco_ecu) +
     x = c(0.9, 0.5, 0.8, 5.05, 5.1, 4.9), 
     y = c('Canada', 'Ecuador', 'Italy', 'Australia', 'Italy', 'Spain'),
     label = c(
-      # Australia ann
-      "Australia produces the<br>**highest rated** chocolate *(3.8/5)*,<br> although only 4 ratings are considered.<br>*Creamy* was one of the most<br>memorable characteristics",
-      # Ecuador ann
+    # Australia ann
+    "Australia produces the<br>**highest rated** chocolate *(3.8/5)*,<br> although only 4 ratings are considered.<br>*Creamy* was one of the most<br>memorable characteristics",
+    # Ecuador ann
     "<br>Surprisingly, Ecuadorian<br>companies rank only **8th**<br>*(3/5, n = 56)*",
     # Worst rating ann
     "<br><br>*Callebaut*, a belgian<br>company produces the **worst**<br>**rated** chocolate (1/5)<br>with 70% cocoa and a *bitter* taste",
@@ -201,9 +194,6 @@ p = ggplot(choco_ecu) +
       size = 28, hjust = 0.5,
       margin = margin(t = 5, b = 5, unit = 'mm')
     ),
-    # plot.subtitle = element_text(
-    #   hjust = 0.5, size = 14, color = "#4f1f10"
-    # ),
     plot.caption.position = "plot",
     plot.caption = element_text(
       hjust = 0.5, size = 11, color = "#4f1f10"
@@ -219,6 +209,7 @@ p = ggplot(choco_ecu) +
 ```
 
 ## Save plot
+
 ```{r, fig.showtext=T}
 ggsave(p, filename = "plot/2022_week_03.png",
        device = "png", width = 35, height = 20.5,
